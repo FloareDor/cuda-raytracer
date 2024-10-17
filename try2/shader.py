@@ -4,8 +4,9 @@ from operations import unit_vector
 from numpy import float32
 import numpy as np
 import ray
+from numba import jit
 
-
+@jit
 def apply_shading(r: Tuple, t: float32, sphere: Tuple, surface_normal: np.ndarray, lights: Tuple):
 	sphere_origin = sphere[0]
 	intersection_point = ray.at(r, t)
@@ -28,7 +29,7 @@ def apply_shading(r: Tuple, t: float32, sphere: Tuple, surface_normal: np.ndarra
 
 		shadedColor = sphere[2] * shade_val
 		sum += shadedColor
-	return sum
+	return sum.astype(np.float32)
 	
 	# # N = unit_vector(ray.at(r, t) - sphere_origin)
 	# if t > 0.0:

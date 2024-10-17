@@ -1,7 +1,10 @@
 from typing import Tuple
 from numpy import float32
+from numba import jit
 
 # origin = ray[0]
 # direction = ray[1]
+
+@jit
 def at(ray: Tuple, t: float32):
     return ray[0] + (t * ray[1])

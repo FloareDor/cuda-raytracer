@@ -6,6 +6,7 @@ from numpy import float32 as npfloat32
 from color import write_color
 from objects import hit_anything
 from shader import apply_shading
+from numba import jit
 
 # Initialize Pygame
 pygame.init()
@@ -26,7 +27,7 @@ class Camera:
         self.e = e
 
 
-e = np.array([0, 0, 0], dtype="f")  # camera center
+e = np.array([0, 0, 0], dtype=np.float32)  # camera center
 d = np.float32(1)  # focal length
 
 U = np.array([1, 0, 0])
@@ -37,8 +38,8 @@ viewport_height = np.float32(2.0)
 viewport_width = np.float32(viewport_height * (float(WIDTH) / HEIGHT))
 
 # Calculate the vectors across the horizontal and down the vertical viewport edges.
-viewport_u = np.array([viewport_width, 0, 0], dtype="f")
-viewport_v = np.array([0, -viewport_height, 0], dtype="f")
+viewport_u = np.array([viewport_width, 0, 0], dtype=np.float32)
+viewport_v = np.array([0, -viewport_height, 0], dtype=np.float32)
 
 # Calculate the horizontal and vertical delta vectors from pixel to pixel.
 pixel_delta_u = viewport_u / WIDTH
@@ -52,20 +53,19 @@ pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v)
 
 screen.fill(BLACK)
 
-origin = np.array([0, 0, -1], dtype="f")
+origin = np.array([0, 0, -1], dtype=np.float32)
 radius = np.float32(0.5)
-
-sphere = (origin, radius, np.array([0.2, 0.5, 0.55]))
+sphere = (origin, radius, np.array([0.2, 0.5, 0.55], dtype=np.float32))
 
 spheres = (sphere,)
 
-light_1 = (np.array([0,-2,2]), 4, np.array([1,1,1]))
+light_1 = (np.array([0, -2, 2], dtype=np.float32), np.float32(4), np.array([1, 1, 1], dtype=np.float32))
 
 lights = (light_1,)
 
 # print(spheres, lights, len(spheres), len(lights))
 
-
+@jit
 def calculate_frame(spheres: tuple):
     pixels = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
 
@@ -75,8 +75,8 @@ def calculate_frame(spheres: tuple):
             ray_direction = pixel_center - e
             ray = (pixel_center, ray_direction)
             
-            ray_color = np.array([0, 0, 0])
-            did_hit_smtng, closest_t, closest_sphere, surface_normal = hit_anything(ray, spheres, 1000)
+            ray_color = np.array([0, 0, 0], dtype=np.float32)
+            did_hit_smtng, closest_t, closest_sphere, surface_normal = hit_anything(ray, spheres, np.float32(1000))
             if did_hit_smtng:
                 ray_color = apply_shading(ray, closest_t, closest_sphere, surface_normal, lights)
 

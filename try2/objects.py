@@ -3,7 +3,10 @@ from typing import Tuple
 from math import sqrt
 from numpy import float32 as npfloat32
 from operations import unit_vector
+from numba import jit
 
+
+@jit
 def hit_anything(ray: Tuple, spheres: Tuple, t_max: npfloat32):
 	hit_anything = False
 	closest_t = t_max
@@ -13,7 +16,7 @@ def hit_anything(ray: Tuple, spheres: Tuple, t_max: npfloat32):
 		# sphere_radius = spheres[i+1]
 		# sphere_color = spheres[i+3]
 		closest_sphere = sphere
-		surface_normal = np.array([0, 0, 0])
+		surface_normal = np.array([0, 0, 0], dtype=np.float32)
 		t, hit_normal = sphere_intersect(ray, sphere)
 		if t > 0.01 and t < closest_t:
 			closest_t = t
@@ -21,9 +24,9 @@ def hit_anything(ray: Tuple, spheres: Tuple, t_max: npfloat32):
 			hit_anything = True
 			surface_normal = hit_normal
 
-	return hit_anything, closest_t, closest_sphere, surface_normal
+	return hit_anything, closest_t, closest_sphere, surface_normal.astype(np.float32)
 
-
+@jit
 def sphere_intersect(ray: Tuple, sphere: Tuple):
 	sphere_origin = sphere[0]
 	sphere_radius = sphere[1]
@@ -39,8 +42,8 @@ def sphere_intersect(ray: Tuple, sphere: Tuple):
 	discriminant = b**2 - (4 * a * c)
 
 	if discriminant < 0:
-		return -1.0, np.array([0, 0, 0])
+		return -1.0, np.array([0, 0, 0], dtype=np.float32)
 
 	t1 = (-b + sqrt(discriminant)) / (2 * a)
 	normal = unit_vector(ray_origin + (ray_dir*t1) - sphere_origin)
-	return t1, normal
+	return t1, normal.astype(np.float32)
