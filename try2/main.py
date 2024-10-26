@@ -14,6 +14,7 @@ pygame.init()
 # Set up some constants
 # WIDTH, HEIGHT = 1280, 800
 WIDTH, HEIGHT = 400, 225
+# WIDTH, HEIGHT = 200, 112
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 X_COLOR = (42, 170, 108)
@@ -59,7 +60,8 @@ sphere = (origin, radius, np.array([0.2, 0.5, 0.55], dtype=np.float32))
 
 spheres = (sphere,)
 
-light_1 = (np.array([0, -2, 2], dtype=np.float32), np.float32(4), np.array([1, 1, 1], dtype=np.float32))
+# light_position, light_intensity, light_color
+light_1 = (np.array([0.5, -0.5, -5], dtype=np.float32), np.float32(4), np.array([1, 1, 1], dtype=np.float32))
 
 lights = (light_1,)
 
@@ -91,14 +93,17 @@ def render_frame():
     pygame.surfarray.blit_array(screen, pixels.swapaxes(0, 1))
 
 running = True
+runonce = True
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-        painting_time = timeit(lambda: render_frame(), number=1)
-        print(f"Rendering window took {painting_time:.6f} seconds")
+        if runonce:
+            painting_time = timeit(lambda: render_frame(), number=1)
+            print(f"Rendering window took {painting_time:.6f} seconds")
+            # runonce = False
 
         pygame.display.flip()
-
     pygame.time.Clock().tick(60)
