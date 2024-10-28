@@ -150,7 +150,7 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
         painting_time = timeit(lambda: render(), number=1)
-        print(f"Rendering window took {painting_time:.6f} seconds")
+        print(f"Rendering window took {painting_time:.6f} seconds | FPS: {(1/painting_time):.1f}")
         
         pygame.time.Clock().tick(60)
     
