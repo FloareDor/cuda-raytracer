@@ -18,16 +18,16 @@ sphere_radii = np.ascontiguousarray([
     100.0
 ], dtype=np.float32)
 
-sphere_colors = np.ascontiguousarray([
-    [0.2, 0.5, 0.55],
-    [0.0, 0.0, 0.0]
+sphere_materials = np.ascontiguousarray([
+    [0.2, 0.5, 0.55, 32.0],
+    [0.0, 0.0, 0.0, 0.0]
 ], dtype=np.float32)
 
 light_pos = np.ascontiguousarray([2.0, 4.0, -3.0], dtype=np.float32)
 camera_pos = np.ascontiguousarray([0.0, 0.0, 0.0], dtype=np.float32)
 
 @cuda.jit('void(uint8[:,:,:], float32[:], float32[:,:], float32[:], float32[:,:])', fastmath=True)
-def render_kernel(output, camera_pos, sphere_centers, sphere_radii, sphere_colors):
+def render_kernel(output, camera_pos, sphere_centers, sphere_radii, sphere_materials):
     x = cuda.threadIdx.x + cuda.blockDim.x * cuda.blockIdx.x
     y = cuda.threadIdx.y + cuda.blockDim.y * cuda.blockIdx.y
     
@@ -93,10 +93,24 @@ def render_kernel(output, camera_pos, sphere_centers, sphere_radii, sphere_color
         light_dir[1] /= light_len
         light_dir[2] /= light_len
         
+        halfway = cuda.local.array(3, dtype=np.float32)
+        halfway[0] = light_dir[0] - ray_dir[0]
+        halfway[1] = light_dir[1] - ray_dir[1]
+        halfway[2] = light_dir[2] - ray_dir[2]
+        
+        halfway_len = math.sqrt(halfway[0]**2 + halfway[1]**2 + halfway[2]**2)
+        halfway[0] /= halfway_len
+        halfway[1] /= halfway_len
+        halfway[2] /= halfway_len
+        
+        ambient = 0.1
         diffuse = max(0.0, normal[0]*light_dir[0] + normal[1]*light_dir[1] + normal[2]*light_dir[2])
         
+        spec_angle = max(0.0, normal[0]*halfway[0] + normal[1]*halfway[1] + normal[2]*halfway[2])
+        specular = math.pow(spec_angle, sphere_materials[hit_sphere_idx, 3])
+        
         for i in range(3):
-            color = sphere_colors[hit_sphere_idx, i] * diffuse
+            color = sphere_materials[hit_sphere_idx, i] * (ambient + diffuse + 0.5 * specular)
             output[x, y, i] = min(255, int(color * 255))
     else:
         t = 0.5 * (ray_dir[1] + 1.0)
@@ -115,14 +129,14 @@ def render():
     d_camera_pos = cuda.to_device(camera_pos)
     d_sphere_centers = cuda.to_device(sphere_centers)
     d_sphere_radii = cuda.to_device(sphere_radii)
-    d_sphere_colors = cuda.to_device(sphere_colors)
+    d_sphere_materials = cuda.to_device(sphere_materials)
     
     render_kernel[blockspergrid, threadsperblock](
         d_output, 
         d_camera_pos,
         d_sphere_centers,
         d_sphere_radii,
-        d_sphere_colors
+        d_sphere_materials
     )
     
     output = d_output.copy_to_host()
