@@ -12,7 +12,7 @@ pygame.event.set_grab(True)
 
 sphere_centers = np.ascontiguousarray([
     [0.0, 0.0, -5.0],
-    [0.0, 2.0, -5.0]
+    [0.0, 1.0, -8.0]
 ], dtype=np.float32)
 
 sphere_radii = np.ascontiguousarray([
@@ -81,6 +81,7 @@ def render_kernel(output, camera_pos, camera_front, camera_right, camera_up, sph
     closest_t = 1e20
     hit_sphere_idx = -1
     
+    # main intersection check loop
     for i in range(sphere_centers.shape[0]):
         oc = cuda.local.array(3, dtype=np.float32)
         oc[0] = camera_pos[0] - sphere_centers[i, 0]
@@ -127,6 +128,31 @@ def render_kernel(output, camera_pos, camera_front, camera_right, camera_up, sph
         light_dir[1] /= light_len
         light_dir[2] /= light_len
         
+        in_shadow = False
+        shadow_origin = cuda.local.array(3, dtype=np.float32)
+        shadow_bias = 0.001
+        for i in range(3):
+            shadow_origin[i] = hit_point[i] + normal[i] * shadow_bias
+            
+        # we send rays to light source to check for intersection. to do shadows.
+        for i in range(sphere_centers.shape[0]):
+            if i != hit_sphere_idx:
+                oc_x = shadow_origin[0] - sphere_centers[i, 0]
+                oc_y = shadow_origin[1] - sphere_centers[i, 1]
+                oc_z = shadow_origin[2] - sphere_centers[i, 2]
+                
+                b = 2.0 * (oc_x*light_dir[0] + oc_y*light_dir[1] + oc_z*light_dir[2])
+                c = oc_x*oc_x + oc_y*oc_y + oc_z*oc_z - sphere_radii[i]*sphere_radii[i]
+                
+                # a = 1 since light_dir is normalized
+                discriminant = b*b - 4.0*c
+                
+                if discriminant > 0:
+                    t = (-b - math.sqrt(discriminant)) / 2.0
+                    if t > 0.001 and t < light_len:
+                        in_shadow = True
+                        break  # we really only need one intersection
+        
         view_dir = cuda.local.array(3, dtype=np.float32)
         view_dir[0] = camera_pos[0] - hit_point[0]
         view_dir[1] = camera_pos[1] - hit_point[1]
@@ -143,10 +169,11 @@ def render_kernel(output, camera_pos, camera_front, camera_right, camera_up, sph
             reflect_dir[i] = 2.0 * dot_normal_light * normal[i] - light_dir[i]
         
         ambient = ambient_strength
-        diffuse = diffuse_strength * max(0.0, dot_normal_light)
+        shadow_multiplier = 0.1 if in_shadow else 1.0
+        diffuse = diffuse_strength * max(0.0, dot_normal_light) * shadow_multiplier
         
         spec = max(0.0, view_dir[0]*reflect_dir[0] + view_dir[1]*reflect_dir[1] + view_dir[2]*reflect_dir[2])
-        specular = specular_strength * math.pow(spec, 32.0)
+        specular = specular_strength * math.pow(spec, 32.0) * shadow_multiplier
         
         for i in range(3):
             color = sphere_materials[hit_sphere_idx, i] * (ambient + diffuse + specular)
