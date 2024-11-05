@@ -54,14 +54,26 @@ pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v)
 
 screen.fill(BLACK)
 
-origin = np.array([0, 0, -1], dtype=np.float32)
-radius = np.float32(0.5)
-sphere = (origin, radius, np.array([0.2, 0.5, 0.55], dtype=np.float32))
+sphere1 = (
+    np.array([-0.5, 0, -1], dtype=np.float32),  # position
+    np.float32(0.75),                           # radius
+    np.array([0.7, 0.65, 0.4], dtype=np.float32), # color
+    np.float32(32.0),                           # shininess
+    np.float32(0.8)                             # reflectivity
+)
 
-spheres = (sphere,)
+sphere2 = (
+    np.array([0.5, 0.5, -1], dtype=np.float32),
+    np.float32(0.5),
+    np.array([0.3, 0.8, 0.3], dtype=np.float32),
+    np.float32(8.0),                            # less shiny
+    np.float32(0.2)                             # less reflective
+)
+
+spheres = (sphere1,sphere2)
 
 # light_position, light_intensity, light_color
-light_1 = (np.array([0.5, -0.5, -5], dtype=np.float32), np.float32(4), np.array([1, 1, 1], dtype=np.float32))
+light_1 = (np.array([-9, 2, -1], dtype=np.float32), np.float32(1.2), np.array([1, 1, 1], dtype=np.float32))
 
 lights = (light_1,)
 
@@ -80,7 +92,7 @@ def calculate_frame(spheres: tuple):
             ray_color = np.array([0, 0, 0], dtype=np.float32)
             did_hit_smtng, closest_t, closest_sphere, surface_normal = hit_anything(ray, spheres, np.float32(1000))
             if did_hit_smtng:
-                ray_color = apply_shading(ray, closest_t, closest_sphere, surface_normal, lights)
+                ray_color = apply_shading(ray, closest_t, closest_sphere, surface_normal, lights, spheres)
 
             
             pixels[y, x] = write_color(ray_color)
