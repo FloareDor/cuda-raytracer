@@ -4,10 +4,11 @@
 - shadows
 - glazed surfaces
 - basic fps controls
+- benchmark for cuda vs numba.jit vs raw python
+- simple aim trainer game using raytracer
 
 <img src="media/shadows.png" alt="Current Progress" width="500"/>
 
 ### To do:
 
-- benchmark for cuda vs numba.jit vs normal python
-- simple aim trainer game using raytracer
+- audio reactive ray tracer
