@@ -7,6 +7,8 @@ from color import write_color
 from objects import hit_anything
 from shader import apply_shading
 from numba import jit
+import matplotlib.pyplot as plt
+from collections import deque
 
 # Initialize Pygame
 pygame.init()
@@ -104,18 +106,58 @@ def render_frame():
     pixels = calculate_frame(spheres)
     pygame.surfarray.blit_array(screen, pixels.swapaxes(0, 1))
 
-running = True
-runonce = True
+MAX_SAMPLES = 100  # Keep last 100 frames of data
+fps_data = deque(maxlen=MAX_SAMPLES)
+render_times = deque(maxlen=MAX_SAMPLES)
+frame_numbers = deque(maxlen=MAX_SAMPLES)
+frame_count = 0
 
+running = True
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            
+            
+            # Create performance visualization
+            plt.figure(figsize=(12, 6))
+            
+            # First subplot for render times
+            plt.subplot(2, 1, 1)
+            plt.plot(list(frame_numbers), list(render_times), 'b-', label='Render Time')
+            plt.title('JIT Rendering Performance Metrics')
+            plt.xlabel('Frame Number')
+            plt.ylabel('Render Time (seconds)')
+            plt.grid(True)
+            plt.legend()
+
+            # Second subplot for FPS
+            plt.subplot(2, 1, 2)
+            plt.plot(list(frame_numbers), list(fps_data), 'g-', label='FPS')
+            plt.xlabel('Frame Number')
+            plt.ylabel('Frames Per Second')
+            plt.grid(True)
+            plt.legend()
+
+            # Adjust layout and save
+            plt.tight_layout()
+            plt.savefig('JIT_performance_metrics.png')
+            print("Performance plot saved as 'performance_metrics.png'")
+
             running = False
 
-        if runonce:
-            painting_time = timeit(lambda: render_frame(), number=1)
-            print(f"Rendering window took {painting_time:.6f} seconds")
-            # runonce = False
+    # Measure and record performance
+    painting_time = timeit(lambda: render_frame(), number=1)
+    fps = 1/painting_time
+    
+    # Store the data
+    frame_count += 1
+    frame_numbers.append(frame_count)
+    render_times.append(painting_time)
+    fps_data.append(fps)
+    
+    print(f"Frame {frame_count}: Render time: {painting_time:.6f} seconds | FPS: {fps:.2f}")
 
-        pygame.display.flip()
+    pygame.display.flip()
     pygame.time.Clock().tick(60)
+
+pygame.quit()

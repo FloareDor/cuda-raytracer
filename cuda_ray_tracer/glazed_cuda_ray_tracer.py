@@ -3,6 +3,8 @@ from numba import cuda
 import pygame
 import math
 from timeit import timeit
+import matplotlib.pyplot as plt
+from collections import deque
 
 pygame.init()
 WIDTH, HEIGHT = 800, 450
@@ -253,7 +255,15 @@ def render(camera):
     pygame.surfarray.blit_array(screen, output)
     pygame.display.flip()
 
+
+
 def main():
+    MAX_SAMPLES = 1000  # Keep last 100 frames of data
+    fps_data = deque(maxlen=MAX_SAMPLES)
+    render_times = deque(maxlen=MAX_SAMPLES)
+    frame_numbers = deque(maxlen=MAX_SAMPLES)
+    camera_positions = deque(maxlen=MAX_SAMPLES)  # Track camera movement
+    frame_count = 0
     camera = Camera()
     clock = pygame.time.Clock()
     running = True
@@ -281,8 +291,58 @@ def main():
             if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
                 running = False
                 
+                # Create performance visualization
+                plt.style.use('dark_background')
+                fig = plt.figure(figsize=(15, 10))
+                
+                # First subplot for render times
+                ax1 = plt.subplot(3, 1, 1)
+                plt.plot(list(frame_numbers), list(render_times), 'cyan', label='CUDA Render Time', linewidth=2)
+                plt.title('CUDA Raytracer Performance Metrics', color='white', fontsize=14)
+                plt.xlabel('Frame Number', color='white')
+                plt.ylabel('Render Time (seconds)', color='white')
+                plt.grid(True, alpha=0.3)
+                plt.legend()
+                ax1.tick_params(colors='white')
+                
+                # Second subplot for FPS
+                ax2 = plt.subplot(3, 1, 2)
+                plt.plot(list(frame_numbers), list(fps_data), 'lime', label='CUDA FPS', linewidth=2)
+                plt.xlabel('Frame Number', color='white')
+                plt.ylabel('Frames Per Second', color='white')
+                plt.grid(True, alpha=0.3)
+                plt.legend()
+                ax2.tick_params(colors='white')
+                
+                # Third subplot for camera position
+                ax3 = plt.subplot(3, 1, 3)
+                positions = np.array(list(camera_positions))
+                plt.plot(frame_numbers, positions[:, 0], 'r-', label='X', linewidth=2)
+                plt.plot(frame_numbers, positions[:, 1], 'g-', label='Y', linewidth=2)
+                plt.plot(frame_numbers, positions[:, 2], 'b-', label='Z', linewidth=2)
+                plt.xlabel('Frame Number', color='white')
+                plt.ylabel('Camera Position', color='white')
+                plt.grid(True, alpha=0.3)
+                plt.legend()
+                ax3.tick_params(colors='white')
+
+                # Adjust layout and save
+                plt.tight_layout()
+                plt.savefig('cuda_performance_metrics.png', facecolor='black', edgecolor='black')
+                print("\nPerformance plot saved as 'cuda_performance_metrics.png'")
+                
+        # Measure and record performance
         painting_time = timeit(lambda: render(camera), number=1)
-        print(f"pos: {camera.position} | time: {painting_time:.3f} | FPS: {(1/painting_time):.1f}")
+        fps = 1/painting_time
+        
+        # Store the data
+        frame_count += 1
+        frame_numbers.append(frame_count)
+        render_times.append(painting_time)
+        fps_data.append(fps)
+        camera_positions.append(camera.position.copy())  # Store camera position
+        
+        print(f"pos: {camera.position} | time: {painting_time:.3f} | FPS: {fps:.1f}")
         
         clock.tick(60)
     

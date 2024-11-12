@@ -10,6 +10,7 @@ python = "^3.12"
 numba = "^0.60.0"
 pygame = "^2.6.1"
 scipy = "^1.14.1"
+matplotlib = "^3.9.2"
 
 
 [build-system]
