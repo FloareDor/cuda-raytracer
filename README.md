@@ -9,6 +9,9 @@
 - audio reactive boids algorithm implementation
 
 <img src="media/shadows.png" alt="Current Progress" width="500"/>
+<img src="media/chain-reaction.png" alt="chain-reaction" width="500"/>
+<img src="media/solar.png" alt="solar" width="500"/>
+<img src="media/white.png" alt="white" width="500"/>
 
 ### To do:
 
