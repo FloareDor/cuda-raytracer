@@ -1,7 +1,8 @@
 # CUDA-Accelerated Ray Tracer with Audio-Reactive Boids
 
-A real-time ray tracer implemented in Python and CUDA that combines physically-based rendering with an audio-reactive flocking simulation. This just shows basic GPU acceleration techniques, real-time audio processing, and Boid's algorithm.
-This is my tribute to one of my favourite songs - Flume (fav artist) X Greenpeace (environmental activism network)
+A real-time ray tracer implemented in Python and CUDA that combines physically-based rendering with an audio-reactive birds flocking simulation - using the Boids algorithm.
+
+Note: This is my tiny tribute to one of my favourite songs - Flume (fav artist) X Greenpeace (environmental activism network)
 
 <img src="media/solar.png" alt="Current Progress" width="500"/>
 
